@@ -1,4 +1,4 @@
-# protein-prediction
+# protein-client
 
 ## Project setup
 ```

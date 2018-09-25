@@ -16,6 +16,7 @@ const IP = "localhost:3000";
 axios.defaults.withCredentials = true;
 axios.interceptors.request.use(function(config) {
     config.url = `http://${IP}/${config.url}`;
+    // store.commit('changeLoading', false);
     return config;
 }, function(error) {
     // 对请求错误做些什么
@@ -26,10 +27,10 @@ axios.interceptors.request.use(function(config) {
 // 添加响应拦截器
 axios.interceptors.response.use(function(response) {
     // 对响应数据做点什么
-    console.log("对响应数据做点什么");
-    console.log(response.data);
+    // store.commit('changeLoading', true);
     if (response.data && response.data.code === 401) {
         router.push('/');
+        return;
     }
     return response;
 }, function(error) {
@@ -43,10 +44,6 @@ Vue.prototype.SOCKET_URL = IP.includes('localhost') ? "ws://localhost" : `ws://$
 Vue.config.productionTip = false;
 
 router.beforeEach((to, from, next) => {
-    console.log('to', to);
-    console.log('from', from);
-    console.log(to.path)
-    console.log(sessionStorage.getItem('user'));
     if (to.path === '/' || sessionStorage.getItem('user')) {
         next();
     } else {

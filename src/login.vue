@@ -119,7 +119,11 @@ export default {
           })
           .then(data => {
             this.$router.push("./app");
-            sessionStorage.setItem("user", data.data);
+            console.log(11111111,data);
+            data = data["data"];
+            if (data["code"] === 200) {
+              sessionStorage.setItem("user", data["data"]);
+            }
           })
           .catch(err => {
             console.error(err);

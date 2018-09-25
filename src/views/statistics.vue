@@ -1,7 +1,7 @@
 <template>
-  <div class="chart">
+  <div class="chart" ref="chart">
     <div class="line-chart-container">
-      <highcharts :options="lineOptions" ref="highcharts"></highcharts>
+      <!-- <highcharts :options="lineOptions" ref="highcharts"></highcharts> -->
     </div>
     <div class="scatter-chart-container">
       <highcharts :options="options" ref="highcharts"></highcharts>
@@ -166,6 +166,7 @@ var options = {
     }
   ]
 };
+import { mapGetters } from "vuex";
 export default {
   name: "HelloWorld",
   props: {
@@ -174,10 +175,18 @@ export default {
   data: function() {
     return {
       options: options,
-      lineOptions: lineOptions
+      lineOptions: lineOptions,
+      data: "yaojun"
     };
   },
+  beforeCreate() {
+    console.log("beforeCreate");
+    console.log(this.data);
+    // this.$store.commit("changeLoading", false);
+  },
   created: function() {
+    console.log(this.$store)
+    this.$store.commit("changeLoading", false);
     this.$http.get("taskManage/readFile").then(data => {
       let arrayData = data.data.split("\n");
       let realData = arrayData.map(value => {
@@ -224,7 +233,7 @@ export default {
       //     rightMin = value[1];
       //   }
       // });
-      
+
       // const rmsdDistance = leftMax - leftMin;
       // const lineDistance = rightMax - rightMin;
       realData2.forEach(value => {
@@ -243,8 +252,18 @@ export default {
       this.lineOptions["series"][0].data = lineChart;
       this.lineOptions["series"][1].data = rmsdChart;
     });
-    console.log(this.$route.query.fileName);
-  }
+  },
+  mounted() {
+    console.log('mounted');
+    console.log(this.$refs.chart.clientHeight);
+    // this.$store.commit("changeLoading", true);
+  },
+  beforeUpdate() {
+    console.log('beforeupdate');
+  },
+  updated() {
+    console.log(updated);
+  },
 };
 </script>
 

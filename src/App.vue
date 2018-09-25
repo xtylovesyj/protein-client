@@ -8,7 +8,8 @@
       <router-link class="link" to="/statusMonitor">状态监控</router-link> |
       <router-link class="link" to="/statistics">数据统计</router-link> |
       <router-link class="link" to="/predict">结果预测</router-link> |
-      <router-link class="link" to="/dataAnalysis">数据分析</router-link>
+      <router-link class="link" to="/dataAnalysis">数据分析</router-link> | 
+      <router-link class="link" to="/tools">工具箱</router-link>
       <div class="user">
         <Icon type="ios-contact" style="font-size:40px;margin-right:5px;" />{{name}}
       </div>
@@ -26,7 +27,11 @@ export default {
   },
   created() {
     this.name = sessionStorage.getItem("user");
-  }
+  },
+  destroyed() {
+    sessionStorage.clear();
+  },
+
 };
 </script>
 
@@ -43,9 +48,9 @@ export default {
 }
 #nav {
   position: relative;
-  padding-left:20px;
-  padding-right:20px;
-  height:58px;
+  padding-left: 20px;
+  padding-right: 20px;
+  height: 58px;
   line-height: 58px;
   background-color: black;
   & > .nav-title {
@@ -62,7 +67,7 @@ export default {
     font-size: 14px;
     font-weight: bolder;
     color: white;
-    height:100%;
+    height: 100%;
   }
   a {
     font-weight: bold;
