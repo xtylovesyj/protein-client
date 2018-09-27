@@ -171,9 +171,15 @@ export default {
         this.memoryStrokeColor = "#007aff";
       }
     });
-    this.$http.get("statusMonitor/readLog/" + this.folderName).then(data => {
-      this.logs = data["data"].split("\n");
-    });
+    this.$http
+      .get("statusMonitor/readLog/" + this.folderName, {
+        params: {
+          lineNum: 100
+        }
+      })
+      .then(data => {
+        this.logs = data["data"].split("\n");
+      });
     this.$http.get("statusMonitor/proteinStatus").then(data => {
       data = data["data"];
       this.runningProteinName = data.name;
@@ -193,22 +199,34 @@ export default {
     logTypeHandler(data) {
       if (data === "蛋白日志") {
         this.$http
-          .get("statusMonitor/readLog/" + this.folderName)
+          .get("statusMonitor/readLog/" + this.folderName, {
+            params: {
+              lineNum: 100
+            }
+          })
           .then(data => {
-            if (data && data["data"]) {
+            data = data["data"];
+            if (data["code"] === 200) {
               this.logs = data["data"].split("\n").reverse();
             } else {
               this.logs = [];
             }
           });
       } else {
-        this.$http.get("statusMonitor/readAppLog").then(data => {
-          if (data && data["data"]) {
-            this.logs = data["data"].split("\n").reverse();
-          } else {
-            this.logs = [];
-          }
-        });
+        this.$http
+          .get("statusMonitor/readAppLog", {
+            params: {
+              lineNum: 100
+            }
+          })
+          .then(data => {
+            data = data["data"];
+            if (data["code"] === 200) {
+              this.logs = data["data"].split("\n").reverse();
+            } else {
+              this.logs = [];
+            }
+          });
       }
     }
   }

@@ -18,6 +18,9 @@ var lineOptions = {
   title: {
     text: "RMSD & Energy 时间走势图"
   },
+  credits: {
+    enabled: false
+  },
   subtitle: {
     text:
       document.ontouchstart === undefined
@@ -109,7 +112,9 @@ var options = {
   title: {
     text: "RMSD & Energy 散点图"
   },
-
+  credits: {
+    enabled: false
+  },
   xAxis: {
     title: {
       enabled: true,
@@ -185,7 +190,8 @@ export default {
   },
   created: function() {
     console.log(this.$store);
-    this.$http.get("taskManage/readFile").then(data => {
+    this.$http.get("statistics/rmsdEnergyData").then(data => {
+      console.log(data);
       let arrayData = data.data.split("\n");
       let realData = arrayData.map(value => {
         const arrays = value.split(/\s+/g);

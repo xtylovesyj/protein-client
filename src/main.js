@@ -14,9 +14,12 @@ Vue.use(iView);
 const IP = "localhost:3000";
 // 添加请求拦截器
 axios.defaults.withCredentials = true;
+const timeouts = [];
 axios.interceptors.request.use(function(config) {
     config.url = `http://${IP}/${config.url}`;
-    store.commit('changeLoading', false);
+    timeouts.push(setTimeout(() => {
+        store.commit('changeLoading', false);
+    }, 100));
     return config;
 }, function(error) {
     // 对请求错误做些什么
@@ -27,6 +30,8 @@ axios.interceptors.request.use(function(config) {
 // 添加响应拦截器
 axios.interceptors.response.use(function(response) {
     // 对响应数据做点什么
+    console.log(32312)
+    clearTimeout(timeouts.shift());
     store.commit('changeLoading', true);
     if (response.data && response.data.code === 401) {
         router.push('/');
@@ -35,6 +40,7 @@ axios.interceptors.response.use(function(response) {
     return response;
 }, function(error) {
     // 对响应错误做点什么
+    store.commit('changeLoading', true);
     return Promise.reject(error);
 });
 Vue.prototype.$http = axios;
