@@ -16,7 +16,7 @@ const IP = "localhost:3000";
 axios.defaults.withCredentials = true;
 axios.interceptors.request.use(function(config) {
     config.url = `http://${IP}/${config.url}`;
-    // store.commit('changeLoading', false);
+    store.commit('changeLoading', false);
     return config;
 }, function(error) {
     // 对请求错误做些什么
@@ -27,7 +27,7 @@ axios.interceptors.request.use(function(config) {
 // 添加响应拦截器
 axios.interceptors.response.use(function(response) {
     // 对响应数据做点什么
-    // store.commit('changeLoading', true);
+    store.commit('changeLoading', true);
     if (response.data && response.data.code === 401) {
         router.push('/');
         return;

@@ -1,7 +1,7 @@
 <template>
   <div class="chart" ref="chart">
     <div class="line-chart-container">
-      <!-- <highcharts :options="lineOptions" ref="highcharts"></highcharts> -->
+      <highcharts :options="lineOptions" ref="highcharts"></highcharts>
     </div>
     <div class="scatter-chart-container">
       <highcharts :options="options" ref="highcharts"></highcharts>
@@ -182,11 +182,9 @@ export default {
   beforeCreate() {
     console.log("beforeCreate");
     console.log(this.data);
-    // this.$store.commit("changeLoading", false);
   },
   created: function() {
-    console.log(this.$store)
-    this.$store.commit("changeLoading", false);
+    console.log(this.$store);
     this.$http.get("taskManage/readFile").then(data => {
       let arrayData = data.data.split("\n");
       let realData = arrayData.map(value => {
@@ -254,16 +252,16 @@ export default {
     });
   },
   mounted() {
-    console.log('mounted');
+    console.log("mounted");
     console.log(this.$refs.chart.clientHeight);
     // this.$store.commit("changeLoading", true);
   },
   beforeUpdate() {
-    console.log('beforeupdate');
+    console.log("beforeupdate");
   },
   updated() {
     console.log(updated);
-  },
+  }
 };
 </script>
 

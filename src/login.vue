@@ -118,11 +118,10 @@ export default {
             password: this.pass
           })
           .then(data => {
-            this.$router.push("./app");
-            console.log(11111111,data);
             data = data["data"];
             if (data["code"] === 200) {
               sessionStorage.setItem("user", data["data"]);
+              this.$router.push("./app");
             }
           })
           .catch(err => {
