@@ -8,6 +8,27 @@ import axios from 'axios';
 import qs from 'qs';
 import highcharts from 'highcharts';
 import VueHighCharts from 'vue-highcharts';
+Vue.filter('dateFormatter', function(arg, val) {
+    arg = new Date(arg);
+    let format = val;
+    var args = {
+        "M+": arg.getMonth() + 1,
+        "d+": arg.getDate(),
+        "h+": arg.getHours(),
+        "m+": arg.getMinutes(),
+        "s+": arg.getSeconds(),
+        "q+": Math.floor((arg.getMonth() + 3) / 3), //quarter
+        "S": arg.getMilliseconds()
+    };
+    if (/(y+)/.test(format))
+        format = format.replace(RegExp.$1, (arg.getFullYear() + "").substr(4 - RegExp.$1.length));
+    for (var i in args) {
+        var n = args[i];
+        if (new RegExp("(" + i + ")").test(format))
+            format = format.replace(RegExp.$1, RegExp.$1.length == 1 ? n : ("00" + n).substr(("" + n).length));
+    }
+    return format;
+});
 Vue.use(VueHighCharts, { highcharts });
 Vue.use(iView);
 // const IP = "101.132.73.133";
@@ -22,20 +43,17 @@ axios.interceptors.request.use(function(config) {
     }, 100));
     return config;
 }, function(error) {
-    // 对请求错误做些什么
-    console.log("对请求错误做些什么");
     return Promise.reject(error);
 });
 
 // 添加响应拦截器
 axios.interceptors.response.use(function(response) {
     // 对响应数据做点什么
-    console.log(32312)
     clearTimeout(timeouts.shift());
     store.commit('changeLoading', true);
     if (response.data && response.data.code === 401) {
         router.push('/');
-        return;
+        return false;
     }
     return response;
 }, function(error) {

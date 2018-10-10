@@ -10,6 +10,7 @@
 </template>
 <script>
 import Highcharts from "highcharts";
+import WebSocketService from "../services/websocket.js";
 var lineOptions = {
   chart: {
     zoomType: "x",
@@ -171,7 +172,6 @@ var options = {
     }
   ]
 };
-import { mapGetters } from "vuex";
 export default {
   name: "HelloWorld",
   props: {
@@ -181,18 +181,108 @@ export default {
     return {
       options: options,
       lineOptions: lineOptions,
-      data: "yaojun"
+      data: "yaojun",
+      drawDate: new Date(),
+      folderName: null
     };
   },
   beforeCreate() {
-    console.log("beforeCreate");
-    console.log(this.data);
+    this.drawDate = new Date();
   },
   created: function() {
-    console.log(this.$store);
-    this.$http.get("statistics/rmsdEnergyData").then(data => {
-      console.log(data);
-      let arrayData = data.data.split("\n");
+    this.folderName = this.$route.query.fileName;
+    this.$http
+      .get("statistics/getData", {
+        folderName: this.folderName
+      })
+      .then(data => {
+        if (data.status !== 200) {
+          return;
+        }
+        data = data["data"];
+        let arrayData = data.data.split("\n");
+        let realData = arrayData.map(value => {
+          const arrays = value.split(/\s+/g);
+          if (arrays[0]) {
+            arrays[0] = +(+arrays[0]).toFixed(1);
+          }
+          if (arrays[1]) {
+            arrays[1] = +(+arrays[1]).toFixed(1);
+          }
+          return arrays;
+        });
+
+        let realData1 = realData.map(value => {
+          return value.join(",");
+        });
+        let realData2 = Array.from(new Set(realData1)).map(value => {
+          let arrays = value.split(",");
+          arrays[0] = +arrays[0];
+          arrays[1] = +arrays[1];
+          return arrays;
+        });
+        this.options["series"][0].data = realData2;
+
+        //////
+        let lineChart = [];
+        let rmsdChart = [];
+        let x = 1;
+        // let leftMax = 0;
+        // let leftMin = 0;
+        // let rightMax = 0;
+        // let rightMin = 0;
+        // realData2.forEach(value=>{
+        //   if(value[0] > leftMax){
+        //     leftMax = value[0];
+        //   }
+        //   if(value[0] < leftMin){
+        //     leftMin = value[0];
+        //   }
+        //   if(value[1] > rightMax){
+        //     rightMax = value[1];
+        //   }
+        //   if(value[1] < rightMin){
+        //     rightMin = value[1];
+        //   }
+        // });
+
+        // const rmsdDistance = leftMax - leftMin;
+        // const lineDistance = rightMax - rightMin;
+        realData2.forEach(value => {
+          let arrays = [];
+          let rmsdArray = [];
+          arrays[0] = 1370131200000 + x * 1000;
+          arrays[1] = value[1];
+
+          rmsdArray[0] = arrays[0];
+          rmsdArray[1] = value[0];
+
+          lineChart.push(arrays);
+          rmsdChart.push(rmsdArray);
+          x++;
+        });
+        this.lineOptions["series"][0].data = lineChart;
+        this.lineOptions["series"][1].data = rmsdChart;
+      });
+
+    this.websocket = new WebSocketService(
+      this.SOCKET_URL + ":9090",
+      "statistics"
+    );
+    this.websocket.addListener("init", data => {
+      if (data.code !== 200) {
+        return;
+      }
+      data = data["data"];
+      if ((new Date().getTime() - this.drawDate.getTime()) / 1000 / 60 > 2) {
+        this.drawDate = new Date();
+        this.draw(data);
+      }
+    });
+  },
+  methods: {
+    draw(data) {
+      let arrayData = data.split("\n");
       let realData = arrayData.map(value => {
         const arrays = value.split(/\s+/g);
         if (arrays[0]) {
@@ -214,32 +304,9 @@ export default {
         return arrays;
       });
       this.options["series"][0].data = realData2;
-
-      //////
       let lineChart = [];
       let rmsdChart = [];
       let x = 1;
-      // let leftMax = 0;
-      // let leftMin = 0;
-      // let rightMax = 0;
-      // let rightMin = 0;
-      // realData2.forEach(value=>{
-      //   if(value[0] > leftMax){
-      //     leftMax = value[0];
-      //   }
-      //   if(value[0] < leftMin){
-      //     leftMin = value[0];
-      //   }
-      //   if(value[1] > rightMax){
-      //     rightMax = value[1];
-      //   }
-      //   if(value[1] < rightMin){
-      //     rightMin = value[1];
-      //   }
-      // });
-
-      // const rmsdDistance = leftMax - leftMin;
-      // const lineDistance = rightMax - rightMin;
       realData2.forEach(value => {
         let arrays = [];
         let rmsdArray = [];
@@ -255,18 +322,13 @@ export default {
       });
       this.lineOptions["series"][0].data = lineChart;
       this.lineOptions["series"][1].data = rmsdChart;
-    });
+    }
   },
-  mounted() {
-    console.log("mounted");
-    console.log(this.$refs.chart.clientHeight);
-    // this.$store.commit("changeLoading", true);
-  },
-  beforeUpdate() {
-    console.log("beforeupdate");
-  },
-  updated() {
-    console.log(updated);
+  destroyed() {
+    if (this.websocket) {
+      this.websocket.close();
+      this.websocket = null;
+    }
   }
 };
 </script>

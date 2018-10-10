@@ -2,19 +2,19 @@
   <div id="app">
     <div id="nav">
       <span class="nav-title">PPMS</span>
-      <router-link class="link" to="/app">
+      <router-link class="link" to="/taskManage">
         任务管理
       </router-link> |
       <router-link class="link" to="/statusMonitor">状态监控</router-link> |
       <router-link class="link" to="/statistics">数据统计</router-link> |
-      <router-link class="link" to="/predict">结果预测</router-link> |
-      <router-link class="link" to="/dataAnalysis">数据分析</router-link> | 
-      <router-link class="link" to="/tools">工具箱</router-link>
+      <!-- <router-link class="link" to="/predict">结果预测</router-link> |
+      <router-link class="link" to="/dataAnalysis">数据分析</router-link> |
+      <router-link class="link" to="/tools">工具箱</router-link> -->
       <div class="user">
         <Icon type="ios-contact" style="font-size:40px;margin-right:5px;" />{{name}}
       </div>
     </div>
-    <router-view/>
+    <router-view />
   </div>
 </template>
 <script>
@@ -30,8 +30,7 @@ export default {
   },
   destroyed() {
     sessionStorage.clear();
-  },
-
+  }
 };
 </script>
 

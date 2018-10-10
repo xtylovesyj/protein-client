@@ -60,11 +60,11 @@
           </li>
           <li>
             <span>开始时间:</span>
-            <div>{{startTime}}</div>
+            <div>{{startTime | dateFormatter('yyyy/MM/dd')}}</div>
           </li>
           <li>
             <span>预计完成时间:</span>
-            <div>{{endTime}}</div>
+            <div>{{endTime | dateFormatter('yyyy/MM/dd hh:mm:ss')}}</div>
           </li>
           <li>
             <span>迭代次数:</span>
@@ -85,24 +85,26 @@
             <Radio label="蛋白日志"></Radio>
             <Radio label="系统日志"></Radio>
           </RadioGroup>
-          <Dropdown style="margin-left: 20px">
+          <Dropdown v-if="folderName" style="margin-left: 20px" @on-click="selectPageNumber">
             <a href="javascript:void(0)">
-              选择行数
+              选择行数({{lineNum}})
               <Icon type="ios-arrow-down"></Icon>
             </a>
             <DropdownMenu slot="list">
-              <DropdownItem>100</DropdownItem>
-              <DropdownItem>200</DropdownItem>
-              <DropdownItem>400</DropdownItem>
-              <DropdownItem>800</DropdownItem>
-              <DropdownItem>1000</DropdownItem>
-              <DropdownItem>全部</DropdownItem>
+              <DropdownItem :name="100" :selected="100===this.lineNum">100</DropdownItem>
+              <DropdownItem :name="200" :selected="200===this.lineNum">200</DropdownItem>
+              <DropdownItem :name="400" :selected="400===this.lineNum">400</DropdownItem>
+              <DropdownItem :name="800" :selected="800===this.lineNum">800</DropdownItem>
+              <DropdownItem :name="1000" :selected="1000===this.lineNum">1000</DropdownItem>
             </DropdownMenu>
           </Dropdown>
         </header>
         <div class="log-body">
           <ol class="log-ol">
-            <li v-for="(value,index) in logs" :key="index">{{value}}</li>
+            <template v-if="logs.length">
+              <li v-for="(value,index) in logs" :key="index">{{value}}</li>
+            </template>
+            <div v-else class="no-content">no content</div>
           </ol>
         </div>
       </div>
@@ -113,7 +115,7 @@
 <script>
 import WebSocketService from "../services/websocket.js";
 export default {
-  name: "about",
+  name: "statusMonitor",
   data: function() {
     return {
       cpuUsage: 0,
@@ -135,12 +137,17 @@ export default {
       iterationNum: "",
       finishedPercent: 0,
       folderName: "",
-      logType: "蛋白日志"
+      logType: "蛋白日志",
+      lineNum: 100,
+      url: "statusMonitor/readLog"
     };
   },
   created: function() {
     this.folderName = this.$route.query.fileName;
-    this.websocket = new WebSocketService(this.SOCKET_URL + ":9090");
+    this.websocket = new WebSocketService(
+      this.SOCKET_URL + ":9090",
+      "statusMonitor"
+    );
     this.websocket.addListener("init", data => {
       this.cpuUsage = parseInt(data["cpu"]["usage"] * 100);
       this.cpuCount = data["cpu"]["cpuNumber"];
@@ -171,23 +178,43 @@ export default {
         this.memoryStrokeColor = "#007aff";
       }
     });
-    this.$http
-      .get("statusMonitor/readLog/" + this.folderName, {
-        params: {
-          lineNum: 100
-        }
-      })
-      .then(data => {
-        this.logs = data["data"].split("\n");
-      });
+    this.getLogs(this.url, this.lineNum);
     this.$http.get("statusMonitor/proteinStatus").then(data => {
       data = data["data"];
       this.runningProteinName = data.name;
       this.finishedPercent = data.finishedPercent;
-      this.endTime = data.elapseTime;
+      this.endTime = data.predictFinishTime;
       this.iterationNum = data.iterationNum;
-      this.startTime = data.runningTime;
+      this.startTime = data.startTime;
     });
+    if (!this.folderName) {
+      this.websocket.addListener("currentTask", data => {
+        this.runningProteinName = data.name;
+        this.finishedPercent = data.finishedPercent;
+        this.endTime = data.predictFinishTime;
+        this.iterationNum = data.iterationNum;
+        this.startTime = data.startTime;
+      });
+      this.websocket.addListener("readLogs", data => {
+        if (data) {
+          if (this.url === "statusMonitor/readLog") {
+            if (data["protein"]) {
+              this.logs = data["protein"].split("\n");
+            } else {
+              this.logs = [];
+            }
+          } else {
+            if (data["app"]) {
+              this.logs = data["app"].split("\n");
+            } else {
+              this.logs = [];
+            }
+          }
+        } else {
+          this.logs = [];
+        }
+      });
+    }
   },
   destroyed: function() {
     if (this.websocket) {
@@ -196,38 +223,34 @@ export default {
     }
   },
   methods: {
+    selectPageNumber(number) {
+      this.lineNum = number;
+      this.getLogs(this.url, this.lineNum);
+    },
     logTypeHandler(data) {
       if (data === "蛋白日志") {
-        this.$http
-          .get("statusMonitor/readLog/" + this.folderName, {
-            params: {
-              lineNum: 100
-            }
-          })
-          .then(data => {
-            data = data["data"];
-            if (data["code"] === 200) {
-              this.logs = data["data"].split("\n").reverse();
-            } else {
-              this.logs = [];
-            }
-          });
+        this.url = `statusMonitor/readLog`;
       } else {
-        this.$http
-          .get("statusMonitor/readAppLog", {
-            params: {
-              lineNum: 100
-            }
-          })
-          .then(data => {
-            data = data["data"];
-            if (data["code"] === 200) {
-              this.logs = data["data"].split("\n").reverse();
-            } else {
-              this.logs = [];
-            }
-          });
+        this.url = `statusMonitor/readAppLog`;
       }
+      this.getLogs(this.url, this.lineNum);
+    },
+    getLogs(url, lineNum) {
+      this.$http
+        .get(url, {
+          params: {
+            lineNum: lineNum,
+            folderName: this.folderName
+          }
+        })
+        .then(data => {
+          data = data["data"];
+          if (data["code"] === 200) {
+            this.logs = data["data"].split("\n").reverse();
+          } else {
+            this.logs = [];
+          }
+        });
     }
   }
 };
@@ -402,12 +425,21 @@ export default {
         }
       }
       & > .log-body {
+        position: relative;
         height: calc(100% - 50px);
         overflow-y: auto;
-        padding: 30px;
+        padding: 10px;
         font-size: 13px;
         & > .log-ol {
           list-style-type: none;
+          & > .no-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 30px;
+            color: #ddd;
+          }
         }
       }
     }

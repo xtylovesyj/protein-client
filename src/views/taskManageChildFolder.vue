@@ -79,14 +79,12 @@ export default {
     };
   },
   created: function() {
-    console.log(this.$route.params);
     this.folderName = this.$route.params.fileName;
     this.$http
       .post("taskManageChildFolder/childFolder", {
         fileName: this.folderName
       })
       .then(data => {
-        console.log(data);
         this.inputFiles = data["data"]["inputFiles"];
         this.inputFiles = this.inputFiles.map((value, index) => {
           return {
@@ -175,7 +173,7 @@ export default {
           inputLabels = this.inputFiles.map(value => value.id);
         }
         if (this.outputFiles.length) {
-          outputLabels = this.outputFiles.map((value => value.id));
+          outputLabels = this.outputFiles.map(value => value.id);
         }
         this.checkAllGroup = inputLabels.concat(outputLabels);
         this.selectedFiles = this.checkAllGroup;

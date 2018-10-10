@@ -118,6 +118,10 @@ export default {
             password: this.pass
           })
           .then(data => {
+            if (!data) {
+              sessionStorage.clear();
+              return;
+            }
             data = data["data"];
             if (data["code"] === 200) {
               sessionStorage.setItem("user", data["data"]);
@@ -125,8 +129,8 @@ export default {
             }
           })
           .catch(err => {
+            sessionStorage.clear();
             console.error(err);
-            this.$router.push("./app");
           });
       }
     }

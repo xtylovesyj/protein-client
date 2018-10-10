@@ -1,12 +1,12 @@
 export default class WebSocketService {
-    constructor(url) {
+    constructor(url, command) {
         this.commandToCallbacks = new Map();
         this.ws = new WebSocket(url);
         this.connected = false;
         this.ws.onopen = () => {
             this.connected = false;
             this.ws.send(JSON.stringify({
-                command: 'init',
+                command: command ? command : 'init',
                 data: 'init'
             }));
         }

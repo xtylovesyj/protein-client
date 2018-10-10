@@ -22,27 +22,31 @@
                   <span :title="file.name" @click="enterStatusMonitor(file.name)">
                     {{file.name}}
                   </span>
-                  <span>
+                  <span v-if="file.isDirectory">
                     <Button class="status-button-notstart" v-if="file.status == 0" type="default" size="small" shape="circle">未开始</Button>
                     <Button class="status-button-running" v-else-if="file.status == 1" type="success" size="small" shape="circle">运行中</Button>
                     <Button class="status-button-error" v-if="file.status == 2" type="error" size="small" shape="circle">异常</Button>
                     <Button class="status-button-completed" v-if="file.status == 3" type="warning" size="small" shape="circle">已完成</Button>
                   </span>
+                  <span class="file-text" v-else>- -</span>
                   <span @click="enterFolder(file.name)" v-if="file.isDirectory">
                     <Icon type="ios-folder-open" :size="25" />
                   </span>
                   <span class="file-text" v-else>- -</span>
-                  <span @click="enterStatistics(file.name)">
+                  <span @click="enterStatistics(file.name)" v-if="file.hasStatistics">
                     <Icon type="ios-stats" :size="25" />
                   </span>
-                  <span @click="enterProtein3D(file.name)">
+                  <span class="file-text" v-else>- -</span>
+                  <span @click="enterProtein3D(file.name)" v-if="file.hasProtein">
                     <Icon type="ios-appstore-outline" :size="25" />
                   </span>
-                  <span class="upload-span">
+                  <span class="file-text" v-else>- -</span>
+                  <span class="upload-span" v-if="file.isDirectory">
                     <Upload multiple :before-upload="beforeUploadHandler" :on-progress="progressHandler" :on-success="successHandler" :show-upload-list="false" style="display:inline-block;height:1px;" :action="BASE_URL+'/taskManage/uploadInputfiles/'+file.name">
                       <Button class="single-upload" type="primary" size="small" icon="ios-cloud-upload-outline"></Button>
                     </Upload>
                   </span>
+                  <span class="file-text" v-else>- -</span>
                 </div>
               </Checkbox>
             </div>
@@ -53,9 +57,6 @@
           <Button :disabled="downloadable" type="success" style="margin-right:3%;" v-on:click="runHandler" shape="circle">执行</Button>
           <Button :disabled="downloadable" type="success" style="margin-right:3%;" v-on:click="downHandler" shape="circle">下载</Button>
           <Button :disabled="deleteable" type="error" style="width:100px;margin-right:3%;" v-on:click="deleteFileHandler" shape="circle">删除</Button>
-          <!-- <Upload :before-upload="beforeUploadHandler" :on-progress="progressHandler" :on-success="successHandler" :show-upload-list="false" style="display:inline-block;height:1px;" :action="uploadPath">
-            <Button class="upload-file" style="width:100px;margin-left:3%;" icon="ios-cloud-upload-outline">文件上传</Button>
-          </Upload> -->
         </div>
       </div>
     </div>
@@ -96,8 +97,9 @@
 </template>
 
 <script>
+import WebSocketService from "../services/websocket.js";
 export default {
-  name: "HelloWorld",
+  name: "TaskManageMain",
   props: {
     msg: String
   },
@@ -128,7 +130,15 @@ export default {
     this.$http.get("taskManage/readFolder").then(data => {
       this.files = data["data"];
     });
+    this.websocket = new WebSocketService(
+      this.SOCKET_URL + ":9090",
+      "taskManage"
+    );
+    this.websocket.addListener("init", data => {
+      this.files = data;
+    });
   },
+  mounted() {},
   methods: {
     stopPrevent(event) {
       const target = event.target || event.srcElement;
@@ -138,7 +148,7 @@ export default {
     },
     enterStatusMonitor(fileName) {
       this.$router.push({
-        path: "./statusMonitor",
+        path: "taskManage/statusMonitor",
         query: {
           fileName: fileName
         }
@@ -159,7 +169,7 @@ export default {
     },
     enterStatistics(fileName) {
       this.$router.push({
-        path: "./statistics",
+        path: "taskManage/statistics",
         query: {
           fileName: fileName
         }
@@ -167,14 +177,14 @@ export default {
     },
     enterProtein3D(fileName) {
       this.$router.push({
-        path: "./protein3D",
+        path: "taskManage/protein3D",
         query: {
           fileName: fileName
         }
       });
     },
     enterFolder(fileName) {
-      this.$router.push(`./taskManageChildFolder/${fileName}`);
+      this.$router.push(`taskManage/taskManageChildFolder/${fileName}`);
     },
     cancelCreateProtein() {
       this.proteinName = "";
@@ -202,7 +212,9 @@ export default {
         })
         .then(data => {
           const deletedData = data["data"];
-          this.files = this.files.filter(value => !deletedData.includes(value.name));
+          this.files = this.files.filter(
+            value => !deletedData.includes(value.name)
+          );
           this.checkAllGroup = [];
           this.indeterminate = false;
           this.$Message.success("文件删除成功");
@@ -412,6 +424,7 @@ export default {
         }
         & > .check-all {
           width: 100%;
+          padding-top: 8px;
           & > .check-box {
             width: 100%;
             border-bottom: 1px solid #e9e9e9;
