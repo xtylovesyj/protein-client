@@ -162,6 +162,9 @@ export default {
         })
         .then(data => {
           this.$Message.success(data["data"]);
+          this.$http.get("taskManage/readFolder").then(data => {
+            this.files = data["data"];
+          });
         });
     },
     runHandler() {

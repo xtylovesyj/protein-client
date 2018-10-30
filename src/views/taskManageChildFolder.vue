@@ -1,9 +1,11 @@
 <template>
   <div class="child">
-    <div class="header">
-      <Icon type="ios-arrow-back" :size="30" @click="back" />
+    <header>
+      <span class="back-area">
+        <Icon type="ios-arrow-back" :size="30" @click="back" />
+      </span>
       <span class="folderName">{{folderName}}</span>
-    </div>
+    </header>
     <div class="file-group">
       <div class="check-all">
         <Checkbox class="check-box" :indeterminate="indeterminate" :value="checkAll" @click.prevent.native="handleCheckAll">
@@ -234,18 +236,25 @@ export default {
 <style scope lang="scss">
 .child {
   height: calc(100vh - 58px);
-  & > .header {
+  & > header {
     text-align: left;
-    height: 65px;
-    line-height: 65px;
+    width: 100%;
+    height: 50px;
+    background: white;
+    line-height: 50px;
     border-bottom: 1px solid #e9e9e9;
-    &:hover {
+    & > .back-area {
+      display: inline-block;
+      height: 100%;
+      width: 50px;
+      text-align: center;
       cursor: pointer;
     }
     & > .folderName {
-      color: #007aff;
+      color: black;
       font-size: 16px;
       position: relative;
+      font-weight: 400;
       top: 2px;
     }
   }

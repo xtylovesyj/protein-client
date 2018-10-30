@@ -1,6 +1,12 @@
 <template>
   <div class="monitor">
-    <div class="usage">
+    <header v-if="folderName">
+      <span class="back-area">
+        <Icon type="ios-arrow-back" :size="30" @click="back" />
+      </span>
+      <span class="folderName">{{folderName}}</span>
+    </header>
+    <div class="usage" v-bind:class="{hasFolderNameHeight:folderName}">
       <div class="progress">
         <div class="circle-text">
           <div class="name">处理器</div>
@@ -223,6 +229,9 @@ export default {
     }
   },
   methods: {
+    back() {
+      this.$router.push("/app");
+    },
     selectPageNumber(number) {
       this.lineNum = number;
       this.getLogs(this.url, this.lineNum);
@@ -257,11 +266,34 @@ export default {
 </script>
 
 <style scoped lang="scss">
+.hasFolderNameHeight {
+  height: calc(40% - 50px) !important;
+}
 .monitor {
   height: calc(100vh - 58px);
   width: 100%;
   text-align: left;
   min-width: 721px;
+  & > header {
+    height: 50px;
+    background: white;
+    line-height: 50px;
+    border-bottom: 1px solid #e9e9e9;
+    & > .back-area {
+      display: inline-block;
+      height: 100%;
+      width: 50px;
+      text-align: center;
+      cursor: pointer;
+    }
+    & > .folderName {
+      color: black;
+      font-size: 16px;
+      position: relative;
+      font-weight: 400;
+      top: 2px;
+    }
+  }
   & > .usage {
     width: 100%;
     height: 40%;

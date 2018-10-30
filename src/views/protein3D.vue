@@ -1,9 +1,11 @@
 <template>
   <div class="protein3D">
-    <div class="header">
-      <Icon type="ios-arrow-back" :size="30" @click="back" />
+    <header>
+      <span class="back-area">
+        <Icon type="ios-arrow-back" :size="30" @click="back" />
+      </span>
       <span class="folderName">{{folderName}}</span>
-    </div>
+    </header>
     <div class="protein3D-body">
       <div class="image">
         <Protein :data="combo1" v-show="combo1" class="protein" />
@@ -93,23 +95,29 @@ export default {
 .protein3D {
   height: calc(100vh - 58px);
   width: 100%;
-  & > .header {
+  & > header {
     text-align: left;
-    height: 65px;
-    line-height: 65px;
+    height: 50px;
+    background: white;
+    line-height: 50px;
     border-bottom: 1px solid #e9e9e9;
-    &:hover {
+    & > .back-area {
+      display: inline-block;
+      height: 100%;
+      width: 50px;
+      text-align: center;
       cursor: pointer;
     }
     & > .folderName {
-      color: #007aff;
+      color: black;
       font-size: 16px;
       position: relative;
+      font-weight: 400;
       top: 2px;
     }
   }
   & > .protein3D-body {
-    height: calc(100% - 86px);
+    height: calc(100% - 71px);
     width: 100%;
     & > .image {
       float: left;
