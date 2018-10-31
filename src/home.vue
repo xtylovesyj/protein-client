@@ -1,10 +1,10 @@
 <template>
-    <div class="home">
-        <router-view/>
-        <div :class="{'hidden':loading}" class="cover">
-            <Icon class="loading" type="ios-loading" />
-        </div>
+  <div class="home">
+    <router-view />
+    <div :class="{'hidden':loading}" class="cover">
+      <Icon class="loading" type="ios-loading" />
     </div>
+  </div>
 
 </template>
 
@@ -18,7 +18,7 @@ export default {
 
 <style scoped lang="scss">
 .home {
-  width: 100vw;
+  width: 100%;
   height: 100vh;
 }
 @-webkit-keyframes spin {
@@ -61,7 +61,7 @@ export default {
     transform: translate(-50px, -50px);
   }
 }
-.hidden{
-    display: none;
+.hidden {
+  display: none;
 }
 </style>

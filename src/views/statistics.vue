@@ -282,15 +282,15 @@ export default {
         "statistics"
       );
       this.websocket.addListener("init", data => {
-        if (data["code"] !== 200) {
-          return;
-        }
-        data = data["data"];
         if ((new Date().getTime() - this.drawDate.getTime()) / 1000 / 60 > 2) {
           this.drawDate = new Date();
-          this.drawScatter(data["scatterData"]);
+          if (data["scatterData"]["code"] === 200) {
+            this.drawScatter(data["scatterData"]["data"]);
+          }
         }
-        this.drawLine(data["lineData"]);
+        if (data["lineData"]["code"] === 200) {
+          this.drawLine(data["lineData"]["data"]);
+        }
       });
     }
   },
@@ -315,12 +315,16 @@ export default {
       let realData1 = realData.map(value => {
         return value.join(",");
       });
-      let realData2 = Array.from(new Set(realData1)).map(value => {
-        let arrays = value.split(",");
-        arrays[0] = +arrays[0];
-        arrays[1] = +arrays[1];
-        return arrays;
-      });
+      let realData2 = Array.from(new Set(realData1))
+        .map(value => {
+          let arrays = value.split(",");
+          arrays[0] = +arrays[0];
+          arrays[1] = +arrays[1];
+          return arrays;
+        })
+        .filter(value => {
+          return (value[0] === 0 || value[0]) && (value[1] === 0 || value[1]);
+        });
       let lineChart = [];
       let rmsdChart = [];
       let x = 1;
@@ -359,8 +363,8 @@ export default {
       });
       let realData2 = Array.from(new Set(realData1)).map(value => {
         let arrays = value.split(",");
-        arrays[0] = +arrays[0];
-        arrays[1] = +arrays[1];
+        arrays[0] = +((+arrays[0]).toFixed(1));
+        arrays[1] = +((+arrays[1]).toFixed(1));
         return arrays;
       });
       this.options["series"][0].data = realData2;
@@ -377,11 +381,11 @@ export default {
 
 <style scoped lang="scss">
 .hasFolderNameHeight {
-  height: calc(50% - 25px) !important;
+  height: 500px !important;
 }
 .chart {
   width: 100%;
-  height: calc(100vh - 58px);
+  height: calc(100vh - 108px);
   & > header {
     text-align: left;
     width: 100%;
@@ -411,7 +415,7 @@ export default {
     & > .line-chart-container,
     & > .scatter-chart-container {
       width: 100%;
-      height: 50%;
+      height: 500px;
     }
   }
 
