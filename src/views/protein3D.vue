@@ -4,7 +4,7 @@
       <span class="back-area">
         <Icon type="ios-arrow-back" :size="30" @click="back" />
       </span>
-      <span class="folderName">{{folderName}}</span>
+      <span class="folderName">{{folderName.replace(/(_\d+)$/,'')}}</span>
     </header>
     <div class="protein3D-body">
       <div class="image">

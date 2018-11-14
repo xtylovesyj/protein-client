@@ -18,13 +18,6 @@ export default {
   created() {
     this.folderName = this.$route.query.fileName;
   },
-  /* computed:{
-    data:{
-      set(val){
-        console.log('computed',val)
-      }
-    }
-  }, */
   watch: {
     /* eslint-disable */
     data: function(val) {

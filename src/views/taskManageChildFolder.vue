@@ -4,46 +4,57 @@
       <span class="back-area">
         <Icon type="ios-arrow-back" :size="30" @click="back" />
       </span>
-      <span class="folderName">{{folderName}}</span>
+      <span class="folderName">{{folderName.replace(/(_\d+)$/,'')}}</span>
     </header>
     <div class="file-group">
-      <div class="check-all">
+      <div class="check-all" v-if="outputFiles.length || inputFiles.length">
         <Checkbox class="check-box" :indeterminate="indeterminate" :value="checkAll" @click.prevent.native="handleCheckAll">
           <span>所有</span>
         </Checkbox>
       </div>
-      <CheckboxGroup class="check-box-group" v-model="checkAllGroup" @on-change="checkAllGroupChange">
-        <div class="output-files">
-          <div class="header">
-            输出文件
-          </div>
-          <div class="default-page" v-if="!outputFiles.length">
-            该文件夹为空
-          </div>
-          <div v-else class="file-item" v-for="(file,key,index) in outputFiles" :key="index">
-            <Checkbox :label="file.id">
-              <span class="file-name" :title="file.value">
-                {{file.value}}
-              </span>
-            </Checkbox>
-          </div>
+      <div class="check-box-group">
+        <div class="header">
+          <Checkbox class="check-box" :indeterminate="indeterminateOutput" :value="checkOutputAll" @click.prevent.native="handleCheckOutputAll">
+            <span class="check-text">输出文件</span>
+          </Checkbox>
         </div>
-        <div class="input-files">
-          <div class="header">
-            输入文件
+        <CheckboxGroup class="check-box-group-out" v-model="checkAllOutputGroup" @on-change="checkAllOutputGroupChange">
+          <div class="output-files">
+            <div class="default-page" v-if="!outputFiles.length">
+              该文件夹为空
+            </div>
+            <div v-else class="file-item" v-for="(file,key,index) in outputFiles" :key="index">
+              <Checkbox :label="file.id">
+                <span class="file-name" :title="file.value">
+                  {{file.value}}
+                </span>
+              </Checkbox>
+            </div>
           </div>
-          <div class="default-page" v-if="!inputFiles.length">
-            该文件夹为空
-          </div>
-          <div v-else class="file-item" v-for="(file,key,index) in inputFiles" :key="index">
-            <Checkbox :label="file.id">
-              <span class="file-name" :title="file.value">
-                {{file.value}}
-              </span>
-            </Checkbox>
-          </div>
+        </CheckboxGroup>
+      </div>
+      <div class="check-box-group">
+        <div class="header">
+          <Checkbox class="check-box" :indeterminate="indeterminateInput" :value="checkInputAll" @click.prevent.native="handleCheckInputAll">
+            <span class="check-text">输入文件</span>
+          </Checkbox>
         </div>
-      </CheckboxGroup>
+        <CheckboxGroup class="check-box-group-in check-box-group" v-model="checkAllInputGroup" @on-change="checkAllInputGroupChange">
+          <div class="input-files">
+            <div class="default-page" v-if="!inputFiles.length">
+              该文件夹为空
+            </div>
+            <div v-else class="file-item" v-for="(file,key,index) in inputFiles" :key="index">
+              <Checkbox :label="file.id">
+                <span class="file-name" :title="file.value">
+                  {{file.value}}
+                </span>
+              </Checkbox>
+            </div>
+          </div>
+        </CheckboxGroup>
+      </div>
+
     </div>
     <div class="button-option-group">
       <Button :disabled="downloadable" type="success" style="width:120px;margin-right:8%;" v-on:click="downHandler" shape="circle">下载</Button>
@@ -67,10 +78,18 @@ export default {
     return {
       folderName: "",
       indeterminate: false,
+      indeterminateInput: false,
+      indeterminateOutput: false,
       checkAll: false,
+      checkInputAll: false,
+      checkOutputAll: false,
       checkAllGroup: [],
+      checkAllInputGroup: [],
+      checkAllOutputGroup: [],
       files: [],
       selectedFiles: [],
+      selectedInputFiles: [],
+      selectedOutputFiles: [],
       deleteConfirm: false,
       deleteable: true,
       downloadable: true,
@@ -127,19 +146,35 @@ export default {
           folderItems: selectedItems,
           parentFolder: this.folderName
         })
-        .then(data => {
-          data = data["data"];
+        .then(({ data }) => {
+          console.log(data);
           data.forEach(value => {
             if (value.folder === "input") {
               this.inputFiles = this.inputFiles.filter(
-                ele => ele.id !== value.id
+                ele => ele.id != value.id
               );
             } else if (value.folder === "output") {
               this.outputFiles = this.outputFiles.filter(
-                ele => ele.id !== value.id
+                ele => ele.id != value.id
               );
             }
           });
+          this.allFilesLength =
+            this.inputFiles.length + this.outputFiles.length;
+          this.indeterminateOutput = false;
+          this.checkOutputAll = false;
+          this.indeterminate = false;
+          this.selectedInputFiles = [];
+          this.selectedOutputFiles = [];
+          this.selectedFiles = [];
+          this.checkAll = false;
+          this.indeterminateInput = false;
+          this.checkInputAll = false;
+          this.deleteable = true;
+          this.downloadable = true;
+          this.checkAllGroup = [];
+          this.checkAllInputGroup = [];
+          this.checkAllOutputGroup = [];
           this.$Message.success(`成功删除${data.length}项文件`);
         });
     },
@@ -169,41 +204,138 @@ export default {
       }
       this.indeterminate = false;
       if (this.checkAll) {
-        let inputLabels = [];
-        let outputLabels = [];
-        if (this.inputFiles.length) {
-          inputLabels = this.inputFiles.map(value => value.id);
-        }
-        if (this.outputFiles.length) {
-          outputLabels = this.outputFiles.map(value => value.id);
-        }
-        this.checkAllGroup = inputLabels.concat(outputLabels);
-        this.selectedFiles = this.checkAllGroup;
+        this.checkAllInputGroup = this.inputFiles.map(value => value.id);
+        this.selectedInputFiles = this.checkAllInputGroup;
+        this.checkAllOutputGroup = this.outputFiles.map(value => value.id);
+        this.selectedOutputFiles = this.checkAllOutputGroup;
+        this.checkInputAll = true;
+        this.checkOutputAll = true;
         this.deleteable = false;
         this.downloadable = false;
       } else {
-        this.checkAllGroup = [];
+        this.checkAllInputGroup = [];
+        this.selectedInputFiles = [];
+        this.checkAllOutputGroup = [];
+        this.selectedOutputFiles = [];
         this.deleteable = true;
         this.downloadable = true;
+        this.checkInputAll = false;
+        this.checkOutputAll = false;
       }
+      this.indeterminateInput = false;
+      this.indeterminateOutput = false;
+      this.changeAllStatus();
     },
-    checkAllGroupChange(data) {
-      this.selectedFiles = data;
-      if (data.length === this.allFilesLength) {
-        this.indeterminate = false;
-        this.checkAll = true;
-        this.deleteable = false;
-        this.downloadable = false;
-      } else if (data.length > 0) {
-        this.indeterminate = true;
-        this.checkAll = false;
+    handleCheckInputAll() {
+      if (!this.inputFiles.length) {
+        return;
+      }
+      if (this.indeterminateInput) {
+        this.checkInputAll = false;
+      } else {
+        this.checkInputAll = !this.checkInputAll;
+      }
+      this.indeterminateInput = false;
+      if (this.checkInputAll) {
+        this.checkAllInputGroup = this.inputFiles.map(value => value.id);
+        this.selectedInputFiles = this.checkAllInputGroup;
         this.deleteable = false;
         this.downloadable = false;
       } else {
+        this.checkAllInputGroup = [];
+        this.selectedInputFiles = [];
+        if (this.selectedOutputFiles.length === 0) {
+          this.deleteable = true;
+          this.downloadable = true;
+        }
+      }
+      this.changeAllStatus();
+    },
+    handleCheckOutputAll() {
+      if (!this.outputFiles.length) {
+        return;
+      }
+      if (this.indeterminateOutput) {
+        this.checkOutputAll = false;
+      } else {
+        this.checkOutputAll = !this.checkOutputAll;
+      }
+      this.indeterminateOutput = false;
+      if (this.checkOutputAll) {
+        this.checkAllOutputGroup = this.outputFiles.map(value => value.id);
+        this.selectedOutputFiles = this.checkAllOutputGroup;
+        this.deleteable = false;
+        this.downloadable = false;
+      } else {
+        this.checkAllOutputGroup = [];
+        this.selectedOutputFiles = [];
+        if (this.selectedInputFiles.length === 0) {
+          this.deleteable = true;
+          this.downloadable = true;
+        }
+      }
+      this.changeAllStatus();
+    },
+    checkAllInputGroupChange(data) {
+      this.selectedInputFiles = data;
+      if (data.length === this.inputFiles.length) {
+        setValue.call(this, false, true, false, false);
+      } else if (data.length > 0) {
+        setValue.call(this, true, false, false, false);
+      } else {
+        if (this.selectedOutputFiles.length !== 0) {
+          this.indeterminateInput = false;
+          this.checkInputAll = false;
+        } else {
+          setValue.call(this, false, false, true, true);
+        }
+      }
+      function setValue(val1, val2, val3, val4) {
+        this.indeterminateInput = val1;
+        this.checkInputAll = val2;
+        this.deleteable = val3;
+        this.downloadable = val4;
+      }
+      this.changeAllStatus();
+    },
+    checkAllOutputGroupChange(data) {
+      this.selectedOutputFiles = data;
+      if (data.length === this.outputFiles.length) {
+        setValue.call(this, false, true, false, false);
+      } else if (data.length > 0) {
+        setValue.call(this, true, false, false, false);
+      } else {
+        if (this.selectedInputFiles.length !== 0) {
+          this.indeterminateOutput = false;
+          this.checkOutputAll = false;
+        } else {
+          setValue.call(this, false, false, true, true);
+        }
+      }
+      function setValue(val1, val2, val3, val4) {
+        this.indeterminateOutput = val1;
+        this.checkOutputAll = val2;
+        this.deleteable = val3;
+        this.downloadable = val4;
+      }
+      this.changeAllStatus();
+    },
+    changeAllStatus() {
+      this.selectedFiles = this.selectedInputFiles.concat(
+        this.selectedOutputFiles
+      );
+      if (this.selectedFiles.length === this.allFilesLength) {
+        this.checkAll = true;
         this.indeterminate = false;
+      } else if (
+        this.selectedFiles.length > 0 &&
+        this.selectedFiles.length < this.allFilesLength
+      ) {
         this.checkAll = false;
-        this.deleteable = true;
-        this.downloadable = true;
+        this.indeterminate = true;
+      } else {
+        this.checkAll = false;
+        this.indeterminate = false;
       }
     },
     downHandler: function() {
@@ -225,8 +357,19 @@ export default {
           folderItems: selectedItems,
           parentFolder: this.folderName
         })
-        .then(data => {
-          this.download(data["data"]);
+        .then(({ data }) => {
+          if (data["folderType"]) {
+            let url = `${this.BASE_URL}/taskManageChildFolder/download/${
+              data["parentFolder"]
+            }/${data["folderType"]}/${data["fileName"]}`;
+            let link = document.createElement("a");
+            link.style.display = "none";
+            link.href = url;
+            document.body.appendChild(link);
+            link.click();
+          } else {
+            this.download(data);
+          }
         });
     }
   }
@@ -234,6 +377,18 @@ export default {
 </script>
 
 <style scope lang="scss">
+.check-text {
+  font-size: 14px;
+  position: relative;
+  margin-left: 5px;
+}
+.button-option-group {
+  position: relative;
+  z-index: 1;
+  border-top: 1px solid #e9e9e9;
+  line-height: 64px;
+  background-color: white;
+}
 .child {
   height: calc(100vh - 58px);
   & > header {
@@ -268,26 +423,31 @@ export default {
     height: calc(100% - 115px);
     width: 100%;
     & > .check-box-group {
-      height: calc(100% -31px);
-      overflow-y: auto;
+      height: calc((100vh - 195px) / 2);
+      // overflow-y: auto;
+      & > .check-box-group-out,
+      & > .check-box-group-in {
+        height: calc(100% - 40px);
+        overflow-y: auto;
+      }
+      & > .header {
+        position: relative;
+        padding-left: 22px;
+        padding-top: 10px;
+        font-size: 16px;
+        font-weight: bold;
+        height: 40px;
+        background-color: #336699;
+        color: white;
+        text-align: left;
+      }
       & > .output-files {
         margin-top: -6px;
-        & > .header {
-          position: relative;
-          padding-left: 20px;
-          padding-top: 8px;
-          font-size: 16px;
-          font-weight: bold;
-          height: 40px;
-          background-color: #336699;
-          color: white;
-          text-align: left;
-        }
       }
       & > .input-files {
         & > .header {
           position: relative;
-          padding-left: 20px;
+          padding-left: 22px;
           padding-top: 8px;
           font-size: 16px;
           font-weight: bold;

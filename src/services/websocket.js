@@ -1,14 +1,16 @@
 export default class WebSocketService {
-    constructor(url, command) {
+    constructor(url, command, params) {
         this.commandToCallbacks = new Map();
         this.ws = new WebSocket(url);
         this.connected = false;
         this.ws.onopen = () => {
-            this.connected = false;
             this.ws.send(JSON.stringify({
                 command: command ? command : 'init',
-                data: 'init'
+                data: 'init',
+                user: sessionStorage.getItem('user'),
+                params: params
             }));
+            this.connected = true;
         }
         this.ws.onmessage = data => {
             if (!data || !data['data']) {
@@ -48,11 +50,11 @@ export default class WebSocketService {
     }
 
     send(message) {
-        let setInterval = null;
-        setInterval = setInterval(() => {
+        let interval = null;
+        interval = setInterval(() => {
             if (this.connected) {
-                this.ws.send(message);
-                clearInterval(setInterval);
+                this.ws.send(JSON.stringify(message));
+                clearInterval(interval);
             }
         }, 100);
     }

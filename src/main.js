@@ -9,6 +9,9 @@ import qs from 'qs';
 import highcharts from 'highcharts';
 import VueHighCharts from 'vue-highcharts';
 Vue.filter('dateFormatter', function(arg, val) {
+    if (!arg) {
+        return '';
+    }
     arg = new Date(arg);
     let format = val;
     var args = {
@@ -66,6 +69,11 @@ Vue.prototype.qs = qs;
 Vue.prototype.BASE_URL = "http://" + IP;
 Vue.prototype.SOCKET_URL = IP.includes('localhost') ? "ws://localhost" : `ws://${IP}`;
 Vue.config.productionTip = false;
+axios.get('login/getServers').then(({ data }) => {
+    if (data) {
+        console.log(data['data']);
+    }
+});
 
 router.beforeEach((to, from, next) => {
     if (to.path === '/' || sessionStorage.getItem('user')) {

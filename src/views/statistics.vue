@@ -4,20 +4,19 @@
       <span class="back-area">
         <Icon type="ios-arrow-back" :size="30" @click="back" />
       </span>
-      <span class="folderName">{{folderName}}</span>
+      <span class="folderName">{{folderName.replace(/(_\d+)$/,'')}}</span>
     </header>
     <div class="chart-group">
-      <div class="line-chart-container" :class="{hasFolderNameHeight:folderName}">
+      <div class="line-chart-container">
         <highcharts :options="energyOptions" ref="highcharts"></highcharts>
       </div>
-      <div class="line-chart-container" :class="{hasFolderNameHeight:folderName}">
+      <div class="line-chart-container">
         <highcharts :options="rmsdOptions" ref="highcharts"></highcharts>
       </div>
-      <div class="scatter-chart-container" :class="{hasFolderNameHeight:folderName}">
-        <highcharts :options="options" ref="highcharts"></highcharts>
-      </div>
+      <div style="height:2px;background:#e9e9e9; width:100%;position:relative;top:-3px;"></div>
+      <ScatterChart :data="scatterDatas" :type="2" style="border-right:2px solid #e9e9e9;"></ScatterChart>
+      <ScatterChart :data="scatterDatas" :type="1"></ScatterChart>
     </div>
-
   </div>
 </template>
 <script>
@@ -163,85 +162,22 @@ var rmsdOptions = {
     }
   ]
 };
-var options = {
-  chart: {
-    type: "scatter",
-    zoomType: "xy"
-  },
-  title: {
-    text: "RMSD & Energy"
-  },
-  credits: {
-    enabled: false
-  },
-  xAxis: {
-    title: {
-      enabled: true,
-      text: "RMSD"
-    },
-    startOnTick: true,
-    endOnTick: true,
-    showLastLabel: true
-  },
-  yAxis: {
-    title: {
-      text: "Energy"
-    }
-  },
-  legend: {
-    layout: "vertical",
-    align: "left",
-    verticalAlign: "top",
-    x: 100,
-    y: 70,
-    floating: true,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1
-  },
-  plotOptions: {
-    scatter: {
-      marker: {
-        radius: 5,
-        states: {
-          hover: {
-            enabled: true,
-            lineColor: "rgb(100,100,100)"
-          }
-        }
-      },
-      states: {
-        hover: {
-          marker: {
-            enabled: false
-          }
-        }
-      },
-      tooltip: {
-        headerFormat: "<b>{series.name}</b><br>",
-        pointFormat: "{point.x}, {point.y}"
-      }
-    }
-  },
-  series: [
-    {
-      name: "energy",
-      color: "rgba(223, 83, 83, .5)",
-      data: []
-    }
-  ]
-};
+import ScatterChart from "@/components/scatterChart.vue";
 export default {
   name: "HelloWorld",
   props: {
     msg: String
   },
+  components: {
+    ScatterChart
+  },
   data: function() {
     return {
-      options: options,
       energyOptions: energyOptions,
       rmsdOptions: rmsdOptions,
       data: "yaojun",
       drawDate: new Date(),
+      scatterDatas: null,
       folderName: null
     };
   },
@@ -274,18 +210,19 @@ export default {
           return;
         }
         data = data["data"]["data"];
-        this.drawScatter(data);
+        this.scatterDatas = data;
       });
-    if (!this.folderName) {
+    if (this.folderName) {
       this.websocket = new WebSocketService(
         this.SOCKET_URL + ":9090",
-        "statistics"
+        "statistics",
+        { folderName: this.folderName }
       );
       this.websocket.addListener("init", data => {
         if ((new Date().getTime() - this.drawDate.getTime()) / 1000 / 60 > 2) {
           this.drawDate = new Date();
           if (data["scatterData"]["code"] === 200) {
-            this.drawScatter(data["scatterData"]["data"]);
+            this.scatterDatas = data["scatterData"]["data"];
           }
         }
         if (data["lineData"]["code"] === 200) {
@@ -297,6 +234,23 @@ export default {
   methods: {
     back() {
       this.$router.push("/app");
+    },
+    isEqualArray(array1, array2) {
+      let isEqual = false;
+      if (array1.length === array2.length) {
+        let count = 0;
+        for (let i = 0; i < array1.length; i++) {
+          if (array1[i][0] === array2[i][0] && array1[i][1] === array2[i][1]) {
+            count++;
+          } else {
+            break;
+          }
+        }
+        if (count === array1.length) {
+          isEqual = true;
+        }
+      }
+      return isEqual;
     },
     drawLine(data) {
       let arrayData = data.split("\n");
@@ -341,33 +295,12 @@ export default {
         rmsdChart.push(rmsdArray);
         x++;
       });
-      this.energyOptions["series"][0].data = lineChart;
-      this.rmsdOptions["series"][0].data = rmsdChart;
-    },
-    drawScatter(data) {
-      let arrayData = data.split("\n");
-      let realData = arrayData.map(value => {
-        let returnArray = [];
-        const arrays = value.split(/\s+/g);
-        if (arrays[1]) {
-          returnArray[0] = +arrays[1].replace(",", "");
-        }
-        if (arrays[2]) {
-          returnArray[1] = +arrays[2].replace(",", "");
-        }
-        return returnArray;
-      });
-
-      let realData1 = realData.map(value => {
-        return value.join(",");
-      });
-      let realData2 = Array.from(new Set(realData1)).map(value => {
-        let arrays = value.split(",");
-        arrays[0] = +((+arrays[0]).toFixed(1));
-        arrays[1] = +((+arrays[1]).toFixed(1));
-        return arrays;
-      });
-      this.options["series"][0].data = realData2;
+      if (!this.isEqualArray(this.energyOptions["series"][0].data, lineChart)) {
+        this.energyOptions["series"][0].data = lineChart;
+      }
+      if (!this.isEqualArray(this.rmsdOptions["series"][0].data, rmsdChart)) {
+        this.rmsdOptions["series"][0].data = rmsdChart;
+      }
     }
   },
   destroyed() {
@@ -384,7 +317,7 @@ export default {
   height: 500px !important;
 }
 .chart {
-  width: 100%;
+  width: calc(100% - 3px);
   height: calc(100vh - 108px);
   & > header {
     text-align: left;
@@ -412,10 +345,12 @@ export default {
     width: 100%;
     height: calc(100%);
     overflow-y: auto;
-    & > .line-chart-container,
-    & > .scatter-chart-container {
-      width: 100%;
-      height: 500px;
+    & > .line-chart-container {
+      position: relative;
+      display: inline-block;
+      border-right: 2px solid #e9e9e9;
+      width: 50%;
+      height: 400px;
     }
   }
 

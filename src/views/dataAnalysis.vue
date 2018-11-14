@@ -1,6 +1,5 @@
 <template>
     <div class="dataAnalysis">
-        
     </div>
 </template>
 

@@ -3,7 +3,7 @@
     <div class="option-down">
       <div class="down-left">
         <div class="file-group">
-          <div class="check-all">
+          <div v-if="files.length" class="check-all">
             <Checkbox class="check-box" :indeterminate="indeterminate" :value="checkAll" @click.prevent.native="handleCheckAll">
               <div class="table-header">
                 <span class="check-box-name">名称</span>
@@ -19,14 +19,14 @@
             <div class="file-item" v-for="(file,key,index) in files" :key="index">
               <Checkbox :label="file.name">
                 <div class="table-body" v-on:click="stopPrevent">
-                  <span :title="file.name" @click="enterStatusMonitor(file.name)">
-                    {{file.name}}
+                  <span :title="file.displayName" @click="enterStatusMonitor(file.name)">
+                    {{file.displayName}}
                   </span>
                   <span v-if="file.isDirectory">
-                    <Button class="status-button-notstart" v-if="file.status == 0" type="default" size="small" shape="circle">未开始</Button>
-                    <Button class="status-button-running" v-else-if="file.status == 1" type="success" size="small" shape="circle">运行中</Button>
-                    <Button class="status-button-error" v-if="file.status == 2" type="error" size="small" shape="circle">异常</Button>
-                    <Button class="status-button-completed" v-if="file.status == 3" type="warning" size="small" shape="circle">已完成</Button>
+                    <Button class="status-button-notstart status-button" v-if="file.status == 0" type="default" size="small" shape="circle">未开始</Button>
+                    <Button class="status-button-running status-button" v-else-if="file.status == 1" type="success" size="small" shape="circle">运行中</Button>
+                    <Button class="status-button-error status-button" v-if="file.status == 2" type="error" size="small" shape="circle">异常</Button>
+                    <Button class="status-button-completed status-button" v-if="file.status == 3" type="warning" size="small" shape="circle">已完成</Button>
                   </span>
                   <span class="file-text" v-else>- -</span>
                   <span @click="enterFolder(file.name)" v-if="file.isDirectory">
@@ -127,19 +127,32 @@ export default {
     };
   },
   created: function() {
-    this.$http.get("taskManage/readFolder").then(data => {
-      this.files = data["data"];
-    });
+    this.getFolders();
     this.websocket = new WebSocketService(
       this.SOCKET_URL + ":9090",
       "taskManage"
     );
     this.websocket.addListener("init", data => {
       this.files = data;
+      this.files.map(val => {
+        let name = val["name"];
+        let displayName = name.replace(/(_\d+)$/, "");
+        val["displayName"] = displayName;
+      });
     });
   },
   mounted() {},
   methods: {
+    getFolders() {
+      this.$http.get("taskManage/readFolder").then(data => {
+        this.files = data["data"];
+        this.files.map(val => {
+          let name = val["name"];
+          let displayName = name.replace(/(_\d+)$/, "");
+          val["displayName"] = displayName;
+        });
+      });
+    },
     stopPrevent(event) {
       const target = event.target || event.srcElement;
       if (target.type !== "file") {
@@ -197,11 +210,12 @@ export default {
         .post("taskManage/createProtein", {
           proteinName: this.proteinName
         })
-        .then(data => {
+        .then(({ data }) => {
           console.log(data);
           this.$Message.success("蛋白质创建成功");
-          this.files.push(data["data"]);
+          // this.files.push(data);
           this.proteinName = "";
+          this.getFolders();
         });
     },
     createHandler() {
@@ -220,6 +234,8 @@ export default {
           );
           this.checkAllGroup = [];
           this.indeterminate = false;
+          this.downloadable = true;
+          this.deleteable = true;
           this.$Message.success("文件删除成功");
         });
     },
@@ -369,6 +385,9 @@ export default {
       &:hover {
         cursor: pointer;
       }
+      & > .status-button {
+        width: 52px;
+      }
       & > .status-button-notstart {
         &:hover,
         &:active {
@@ -415,8 +434,7 @@ export default {
     height: 100%;
     & > .down-left {
       width: 100%;
-      height: 100%;
-      overflow-y: auto;
+      height: calc(100vh - 60px);
       & > .file-group {
         height: calc(100% - 55px);
         // overflow-y: auto;

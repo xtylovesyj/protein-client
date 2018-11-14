@@ -4,7 +4,7 @@
       <span class="back-area">
         <Icon type="ios-arrow-back" :size="30" @click="back" />
       </span>
-      <span class="folderName">{{folderName}}</span>
+      <span class="folderName">{{folderName.replace(/(_\d+)$/,'')}}</span>
     </header>
     <div class="usage" v-bind:class="{hasFolderNameHeight:folderName}">
       <div class="progress">
@@ -60,21 +60,25 @@
       <div class="header">当前任务</div>
       <div class="task-body">
         <ol>
-          <li>
+          <!-- <li>
             <span>名称:</span>
             <div>{{runningProteinName}}</div>
-          </li>
+          </li> -->
           <li>
             <span>开始时间:</span>
-            <div>{{startTime | dateFormatter('yyyy/MM/dd')}}</div>
+            <div>{{startTime | dateFormatter('yyyy/MM/dd hh:mm:ss')}}</div>
           </li>
           <li>
             <span>预计完成时间:</span>
             <div>{{endTime | dateFormatter('yyyy/MM/dd hh:mm:ss')}}</div>
           </li>
           <li>
-            <span>迭代次数:</span>
+            <span>当前迭代次数:</span>
             <div>{{iterationNum}}</div>
+          </li>
+          <li>
+            <span>总迭代次数:</span>
+            <div>{{totalIterations}}</div>
           </li>
           <li>
             <span>预计进度:</span>
@@ -108,7 +112,7 @@
         <div class="log-body">
           <ol class="log-ol">
             <template v-if="logs.length">
-              <li v-for="(value,index) in logs" :key="index">{{value}}</li>
+              <li v-for="(value,index) in logs" :key="index"><span style="display:inline-block;margin-right:5px;color:green;font-weight:bold;">{{index+1}}:</span>{{value}}</li>
             </template>
             <div v-else class="no-content">no content</div>
           </ol>
@@ -142,6 +146,7 @@ export default {
       endTime: "",
       iterationNum: "",
       finishedPercent: 0,
+      totalIterations: "",
       folderName: "",
       logType: "蛋白日志",
       lineNum: 100,
@@ -152,9 +157,13 @@ export default {
     this.folderName = this.$route.query.fileName;
     this.websocket = new WebSocketService(
       this.SOCKET_URL + ":9090",
-      "statusMonitor"
+      "statusMonitor",
+      { folderName: this.folderName }
     );
     this.websocket.addListener("init", data => {
+      if (!data) {
+        return;
+      }
       this.cpuUsage = parseInt(data["cpu"]["usage"] * 100);
       this.cpuCount = data["cpu"]["cpuNumber"];
       this.platformName = data["cpu"]["platformName"];
@@ -185,27 +194,43 @@ export default {
       }
     });
     this.getLogs(this.url, this.lineNum);
-    this.$http.get("statusMonitor/proteinStatus").then(data => {
-      data = data["data"];
-      this.runningProteinName = data.name;
-      this.finishedPercent = data.finishedPercent;
-      this.endTime = data.predictFinishTime;
-      this.iterationNum = data.iterationNum;
-      this.startTime = data.startTime;
-    });
-    if (!this.folderName) {
+    this.$http
+      .get("statusMonitor/proteinStatus", {
+        params: {
+          folderName: this.folderName
+        }
+      })
+      .then(({ data }) => {
+        if (data["code"] === 200) {
+          data = data["data"];
+          this.runningProteinName = data.name;
+          this.finishedPercent = data.finishedPercent;
+          this.endTime = data.predictFinishTime;
+          this.iterationNum = data.iterationNum;
+          this.startTime = data.startTime;
+          this.totalIterations = data.totalIterations;
+        }
+      });
+    if (this.folderName) {
       this.websocket.addListener("currentTask", data => {
-        this.runningProteinName = data.name;
-        this.finishedPercent = data.finishedPercent;
-        this.endTime = data.predictFinishTime;
-        this.iterationNum = data.iterationNum;
-        this.startTime = data.startTime;
+        if (data) {
+          this.runningProteinName = data.name;
+          this.finishedPercent = data.finishedPercent;
+          this.endTime = data.predictFinishTime;
+          this.iterationNum = data.iterationNum;
+          this.startTime = data.startTime;
+          this.totalIterations = data.totalIterations;
+        }
       });
       this.websocket.addListener("readLogs", data => {
         if (data) {
           if (this.url === "statusMonitor/readLog") {
-            if (data["protein"]) {
+            if (
+              data["protein"] &&
+              Object.getOwnPropertyNames(data["protein"]).length
+            ) {
               this.logs = data["protein"].split("\n");
+              this.logs.shift();
             } else {
               this.logs = [];
             }
@@ -235,6 +260,9 @@ export default {
     selectPageNumber(number) {
       this.lineNum = number;
       this.getLogs(this.url, this.lineNum);
+      this.websocket.send({
+        lineNum: this.lineNum
+      });
     },
     logTypeHandler(data) {
       if (data === "蛋白日志") {
@@ -255,7 +283,8 @@ export default {
         .then(data => {
           data = data["data"];
           if (data["code"] === 200) {
-            this.logs = data["data"].split("\n").reverse();
+            this.logs = data["data"].split("\n");
+            this.logs.shift();
           } else {
             this.logs = [];
           }

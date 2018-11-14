@@ -10,6 +10,7 @@ import Login from './login.vue'
 import App from './App.vue'
 import TaskManageMain from './components/taskManageMain'
 import StatusMonitor from './views/statusMonitor'
+import blogMain from './views/blog/main'
 
 Vue.use(Router)
 
@@ -91,6 +92,10 @@ export default new Router({
                     component: DataAnalysis
                 }
             ]
+        },
+        {
+            path: '/blog',
+            component: blogMain
         }
     ]
 });
