@@ -1,6 +1,5 @@
 <template>
   <div id="app">
-    <Button type="primary" @click="renderFunc">Open notice</Button>
     <div id="nav">
       <span class="nav-title">PPMS</span>
       <!-- <router-link class="link" to="/taskManage">
@@ -40,7 +39,7 @@ export default {
   methods: {
     renderFunc(name) {
       this.$Notice.error({
-        title: `${name}运行错误`,
+        title: `${name.replace(/(_\d+)$/,'')}运行错误`,
         desc: "<a>点击查看详细信息</a>",
         duration: 0,
         render: h => {
@@ -50,7 +49,7 @@ export default {
               "a",
               {
                 attrs: {
-                  href: "/statusMonitor"
+                  href:`taskManage/excuteErrorLog?fileName=${name}`
                 },
                 style: {
                   color: "red"

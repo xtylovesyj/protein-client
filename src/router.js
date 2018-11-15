@@ -10,6 +10,7 @@ import Login from './login.vue'
 import App from './App.vue'
 import TaskManageMain from './components/taskManageMain'
 import StatusMonitor from './views/statusMonitor'
+import ExcuteErrorLog from './views/excuteErrorLog';
 import blogMain from './views/blog/main'
 
 Vue.use(Router)
@@ -64,6 +65,11 @@ export default new Router({
                             path: 'protein3D',
                             name: 'protein3D',
                             component: Protein3D
+                        },
+                        {
+                            path: 'excuteErrorLog',
+                            name: 'excuteErrorLog',
+                            component: ExcuteErrorLog
                         }
                     ]
                 },

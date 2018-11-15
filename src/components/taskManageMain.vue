@@ -11,6 +11,7 @@
                 <span>子文件</span>
                 <span>统计图</span>
                 <span>蛋白图</span>
+                <span>执行错误</span>
                 <span>文件上传</span>
               </div>
             </Checkbox>
@@ -41,6 +42,10 @@
                     <Icon type="ios-appstore-outline" :size="25" />
                   </span>
                   <span class="file-text" v-else>- -</span>
+                  <span @click="enterExcuteErrorLog(file.name)">
+                    <Icon type="ios-bug" :size="25"/>
+                  </span>
+                  <!-- <span class="file-text" v-else>- -</span> -->
                   <span class="upload-span" v-if="file.isDirectory">
                     <Upload multiple :before-upload="beforeUploadHandler" :on-progress="progressHandler" :on-success="successHandler" :show-upload-list="false" style="display:inline-block;height:1px;" :action="BASE_URL+'/taskManage/uploadInputfiles/'+file.name">
                       <Button class="single-upload" type="primary" size="small" icon="ios-cloud-upload-outline"></Button>
@@ -175,13 +180,23 @@ export default {
         })
         .then(data => {
           this.$Message.success(data["data"]);
-          this.$http.get("taskManage/readFolder").then(data => {
-            this.files = data["data"];
+          this.$http.get("taskManage/readFolder").then(({ data }) => {
+            this.files.forEach((value, index) => {
+              value["status"] = data[index]["status"];
+            });
           });
         });
     },
     runHandler() {
       this.executeConfirm = true;
+    },
+    enterExcuteErrorLog(fileName) {
+      this.$router.push({
+        path: "taskManage/excuteErrorLog",
+        query: {
+          fileName: fileName
+        }
+      });
     },
     enterStatistics(fileName) {
       this.$router.push({
@@ -380,7 +395,7 @@ export default {
     }
     & > span {
       display: inline-block;
-      width: 16.66%;
+      width: 14.28%;
       font-size: 16px;
       &:hover {
         cursor: pointer;
@@ -461,7 +476,7 @@ export default {
               width: calc(100% - 46px);
               & > span {
                 display: inline-block;
-                width: 16.66%;
+                width: 14.28%;
                 font-size: 16px;
               }
             }
