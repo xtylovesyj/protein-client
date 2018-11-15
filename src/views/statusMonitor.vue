@@ -204,7 +204,7 @@ export default {
         if (data["code"] === 200) {
           data = data["data"];
           this.runningProteinName = data.name;
-          this.finishedPercent = data.finishedPercent;
+          this.finishedPercent = +(data.finishedPercent.toFixed(2));
           this.endTime = data.predictFinishTime;
           this.iterationNum = data.iterationNum;
           this.startTime = data.startTime;
@@ -215,7 +215,7 @@ export default {
       this.websocket.addListener("currentTask", data => {
         if (data) {
           this.runningProteinName = data.name;
-          this.finishedPercent = data.finishedPercent;
+          this.finishedPercent = +(data.finishedPercent.toFixed(2));
           this.endTime = data.predictFinishTime;
           this.iterationNum = data.iterationNum;
           this.startTime = data.startTime;

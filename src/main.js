@@ -34,8 +34,8 @@ Vue.filter('dateFormatter', function(arg, val) {
 });
 Vue.use(VueHighCharts, { highcharts });
 Vue.use(iView);
-const IP = "101.132.73.133";
-// const IP = "localhost:3000";
+// const IP = "101.132.73.133";
+const IP = "localhost:3000";
 // 添加请求拦截器
 axios.defaults.withCredentials = true;
 const timeouts = [];

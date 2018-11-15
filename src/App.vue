@@ -1,5 +1,6 @@
 <template>
   <div id="app">
+    <Button type="primary" @click="renderFunc">Open notice</Button>
     <div id="nav">
       <span class="nav-title">PPMS</span>
       <!-- <router-link class="link" to="/taskManage">
@@ -18,6 +19,7 @@
   </div>
 </template>
 <script>
+import WebSocketService from "./services/websocket.js";
 export default {
   name: "app",
   data() {
@@ -27,9 +29,39 @@ export default {
   },
   created() {
     this.name = sessionStorage.getItem("user");
+    this.websocket = new WebSocketService(this.SOCKET_URL + ":9090", "home");
+    this.websocket.addListener("errorTask", data => {
+      this.renderFunc(data["proteinName"]);
+    });
   },
   destroyed() {
     sessionStorage.clear();
+  },
+  methods: {
+    renderFunc(name) {
+      this.$Notice.error({
+        title: `${name}运行错误`,
+        desc: "<a>点击查看详细信息</a>",
+        duration: 0,
+        render: h => {
+          return h("span", [
+            "查看详细错误信息请",
+            h(
+              "a",
+              {
+                attrs: {
+                  href: "/statusMonitor"
+                },
+                style: {
+                  color: "red"
+                }
+              },
+              "点击这里"
+            )
+          ]);
+        }
+      });
+    }
   }
 };
 </script>
